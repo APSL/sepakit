@@ -5,10 +5,9 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"math/big"
-	"strconv"
-	"strings"
 	"time"
+
+	"golang.org/x/text/encoding/charmap"
 )
 
 // Document is the SEPA format for the document containing all transfers
@@ -19,7 +18,7 @@ type Document struct {
 	MsgID            string          `xml:"CstmrDrctDbtInitn>GrpHdr>MsgId"`
 	CreationDateTime string          `xml:"CstmrDrctDbtInitn>GrpHdr>CreDtTm"`
 	TransacNb        int             `xml:"CstmrDrctDbtInitn>GrpHdr>NbOfTxs"`
-	CtrlSum          Amount          `xml:"CstmrDrctDbtInitn>GrpHdr>CtrlSum"`
+	CtrlSum          string          `xml:"CstmrDrctDbtInitn>GrpHdr>CtrlSum"`
 	InitiatingParty  InitiatingParty `xml:"CstmrDrctDbtInitn>GrpHdr>InitgPty"`
 	Payments         []*Payment      `xml:"CstmrDrctDbtInitn>PmtInf"`
 }
@@ -57,7 +56,7 @@ type Payment struct {
 	ID                      string `xml:"PmtInfId"`
 	Method                  string `xml:"PmtMtd"`
 	TransacNb               int    `xml:"NbOfTxs"`
-	CtrlSum                 Amount `xml:"CtrlSum"`
+	CtrlSum                 string `xml:"CtrlSum"`
 	ServiceLevel            string `xml:"PmtTpInf>SvcLvl>Cd"`
 	LocalInstrument         string `xml:"PmtTpInf>LclInstrm>Cd"`
 	SequenceType            string `xml:"PmtTpInf>SeqTp"`
@@ -96,35 +95,6 @@ type Transaction struct {
 	Debtor
 	RemittanceInfo string `xml:"RmtInf>Ustrd"`
 }
-type Amount float64
-
-// func (a Amount) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-// 	// dateString := fmt.Sprintf("%2f", a)
-// 	dateString := "hola"
-// 	e.EncodeElement(dateString, start)
-// 	return nil
-// }
-
-// func (t TAmount) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-// 	dateString := fmt.Sprintf("%.2f", t.Amount)
-// 	e.EncodeElement(dateString, start)
-// 	return nil
-// }
-
-// func (a Amount) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-// 	// dateString := fmt.Sprintf("%.2f", a)
-// 	dateString := "floaaat"
-// 	e.EncodeElement(dateString, start)
-// 	return nil
-// }
-
-// func (t TAmount) MarshalXMLAttr(name xml.Name) (attr xml.Attr, err error) {
-// 	attr = xml.Attr{
-// 		Name:  name,
-// 		Value: "holaa",
-// 	}
-// 	return
-// }
 
 // TAmount is the transaction amount with its currency
 type TAmount struct {
@@ -148,124 +118,32 @@ func NewDocument() *Document {
 func (d *Document) SetCreationDateTime(t time.Time) {
 	d.CreationDateTime = t.Format("2006-01-02T15:04:05")
 }
+
 func (d *Document) SetInitiatingParty(name, id string) {
 	d.InitiatingParty.Name = name
 	d.InitiatingParty.ID = id
 	d.InitiatingParty.Scheme = "SEPA" //fixed
 }
+
 func (d *Document) AddPayment(p *Payment) {
 	d.Payments = append(d.Payments, p)
 }
 
-// func NewCreditor() *Creditor {
-// 	c := &Creditor{
-// 		SchemeName: "SEPA",
-// 	}
-// 	return c
-// }
-
-// func NewPayment() *Payment {
-// 	p := &Payment{
-// 		ServiceLevel:    "SEPA",
-// 		LocalInstrument: "CORE",
-// 		SequenceType:    "RCUR",
-// 	}
-// 	return p
-// }
-
-// func (doc *Document) AddTransaction(id string, amount float64, currency string, creditorName string, creditorIBAN string) error {
-// 	if !IsValid(creditorIBAN) {
-// 		return errors.New("Invalid creditor IBAN")
-// 	}
-// 	if DecimalsNumber(amount) > 2 {
-// 		return errors.New("Amount 2 decimals only")
-// 	}
-// 	doc.PaymentTransactions = append(doc.PaymentTransactions, Transaction{
-// 		TransacID:           id,
-// 		TransacIDe2e:        id,
-// 		TransacMotif:        id,
-// 		TransacAmount:       TAmount{Amount: amount, Currency: currency},
-// 		TransacCreditorName: creditorName,
-// 		TransacCreditorIBAN: creditorIBAN,
-// 		TransacRegulatory:   "150", // always 150
-// 	})
-// 	doc.TransacNb++
-// 	doc.PaymentInfoTransacNb++
-
-// 	amountCents, e := ToCents(amount)
-// 	if e != nil {
-// 		return errors.New("In AddTransaction can't convert amount in cents")
-// 	}
-// 	cumulCents, _ := ToCents(doc.CtrlSum)
-// 	if e != nil {
-// 		return errors.New("In AddTransaction can't convert control sum in cents")
-// 	}
-
-// 	cumulCents += amountCents
-
-// 	cumulEuro, _ := ToEuro(cumulCents)
-// 	if e != nil {
-// 		return errors.New("In AddTransaction can't convert cumul in euro")
-// 	}
-
-// 	doc.CtrlSum = cumulEuro
-// 	doc.PaymentInfoCtrlSum = cumulEuro
-// 	return nil
-// }
-
-// Serialize returns the xml document in byte stream
-func (doc *Document) Serialize() ([]byte, error) {
-	return xml.Marshal(doc)
+//WriteBytes returns XML Serialized document in byte stream
+func (d *Document) WriteBytes() ([]byte, error) {
+	return xml.MarshalIndent(d, "", "  ")
 }
 
-// PrettySerialize returns the indented xml document in byte stream
-func (doc *Document) PrettySerialize() ([]byte, error) {
-	return xml.MarshalIndent(doc, "", "  ")
-}
+//WriteLatin1 writes ISO8859-1 XML document to io.Writer argument
+func (d *Document) WriteLatin1(w io.Writer) error {
 
-// IsValid IBAN
-func IsValid(iban string) bool {
-	i := new(big.Int)
-	t := big.NewInt(10)
-	if len(iban) < 4 || len(iban) > 34 {
-		return false
+	data, err := d.WriteBytes()
+	if err != nil {
+		return err
 	}
-	for _, v := range iban[4:] + iban[:4] {
-		switch {
-		case v >= 'A' && v <= 'Z':
-			ch := v - 'A' + 10
-			i.Add(i.Mul(i, t), big.NewInt(int64(ch/10)))
-			i.Add(i.Mul(i, t), big.NewInt(int64(ch%10)))
-		case v >= '0' && v <= '9':
-			i.Add(i.Mul(i, t), big.NewInt(int64(v-'0')))
-		case v == ' ':
-		default:
-			return false
-		}
-	}
-	return i.Mod(i, big.NewInt(97)).Int64() == 1
-}
-
-// DecimalsNumber returns the number of decimals in a float
-func DecimalsNumber(f float64) int {
-	s := strconv.FormatFloat(f, 'f', -1, 64)
-	p := strings.Split(s, ".")
-	if len(p) < 2 {
-		return 0
-	}
-	return len(p[1])
-}
-
-// ToCents returns the cents representation in int64
-func ToCents(f float64) (int64, error) {
-	s := strconv.FormatFloat(f, 'f', 2, 64)
-	sc := strings.Replace(s, ".", "", 1)
-	return strconv.ParseInt(sc, 10, 64)
-}
-
-// ToEuro returns the euro representation in float64
-func ToEuro(i int64) (float64, error) {
-	d := strconv.FormatInt(i, 10)
-	df := d[:len(d)-2] + "." + d[len(d)-2:]
-	return strconv.ParseFloat(df, 64)
+	wl1 := charmap.ISO8859_1.NewEncoder().Writer(w)
+	header := []byte(`<?xml version="1.0" encoding="iso-8859-1"?>` + "\n")
+	wl1.Write(header)
+	wl1.Write(data)
+	return nil
 }
