@@ -32,6 +32,21 @@ func Latin1DebitTxtToXML(in io.Reader, out io.Writer) error {
 	return nil
 }
 
+//Latin1DebitTxtToXMLDoc creates XML SEPA Document from TXT Document
+//Transforms input to ISO-8859-1
+func Latin1DebitTxtToXMLDoc(in io.Reader) (*sepadebit.Document, error) {
+	r := charmap.ISO8859_1.NewDecoder().Reader(in)
+	parser := aeb1914.NewParser()
+
+	doctxt, err := parser.Parse(r)
+	if err != nil {
+		return nil, err
+	}
+
+	docxml := DebitTxtToXML(doctxt)
+	return docxml, nil
+}
+
 //DebitTxtToXML creates XML SEPA Document from TXT Document
 func DebitTxtToXML(doctxt *aeb1914.Document) *sepadebit.Document {
 
