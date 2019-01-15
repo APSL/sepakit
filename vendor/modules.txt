@@ -1,4 +1,4 @@
-# golang.org/x/text v0.0.0-20171218113626-eb22672bea55
+# golang.org/x/text v0.3.0
 golang.org/x/text/encoding/charmap
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
