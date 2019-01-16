@@ -14,7 +14,7 @@ func main() {
 	inpath := "-"
 	outpath := "-"
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Converts AEB194 TXT file to SEPA XML file\nUsage: %s [INFILE] [OUTFILE]\nDefaults to stdin and stdout (-)\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Converts AEB 19.14 TXT file to SEPA XML file\nUsage: %s [INFILE] [OUTFILE]\nDefaults to stdin and stdout (-)\n", os.Args[0])
 	}
 	flag.Parse()
 
