@@ -88,4 +88,4 @@ Bernardo Cabezas - bcabezas at [apsl.net](https://www.apsl.net) - [bercab](https
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details
