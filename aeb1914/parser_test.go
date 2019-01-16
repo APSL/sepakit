@@ -9,10 +9,10 @@ import (
 )
 
 func TestInitiator(t *testing.T) {
-	f, err := os.Open("c19.txt")
+	f, err := os.Open("../input-aeb1914.txt")
 	r := charmap.ISO8859_1.NewDecoder().Reader(f)
 	if err != nil {
-		t.Error("Error opening c19.txt test file")
+		t.Error("Error opening input-aeb1914.txt test file")
 	}
 	parser := NewParser()
 	doc, err := parser.Parse(r)
