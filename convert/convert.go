@@ -73,11 +73,11 @@ func DebitTxtToXML(doctxt *aeb1914.Document) *sepadebit.Document {
 				CtrlSum:                 fmt.Sprintf("%.2f", cp.TotalAmount),
 				TransacNb:               cp.DebitRegisterCount,
 				RequestedCollectionDate: dp.Date.Format("2006-01-02"),
-				ID:              fmt.Sprintf("rem%s1", dp.Date.Format("20060102")),
-				Method:          "DD",
-				ServiceLevel:    "SEPA",
-				LocalInstrument: "CORE",
-				SequenceType:    "RCUR",
+				ID:                      fmt.Sprintf("rem%s1", dp.Date.Format("20060102")),
+				Method:                  "DD",
+				ServiceLevel:            "SEPA",
+				LocalInstrument:         "CORE",
+				SequenceType:            "RCUR",
 			}
 			for _, dt := range dp.DebitTransactions {
 				t := sepadebit.Transaction{
@@ -106,6 +106,7 @@ func DebitTxtToXML(doctxt *aeb1914.Document) *sepadebit.Document {
 	return docxml
 }
 
+//stripSepa implements a filter to remove not alowed chars
 func stripSepa(str string) string {
 	isMn := func(r rune) bool {
 		return unicode.Is(unicode.Mn, r) // Mn: nonspacing marks

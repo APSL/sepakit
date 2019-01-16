@@ -11,12 +11,14 @@ import (
 	"time"
 )
 
+//Parser represents the main Parser object
 type Parser struct {
 	doc             *Document
 	currentPayment  *DatePayment
 	currentCreditor *CreditorPayments
 }
 
+//NewParser returns a sepa1914 Parser
 func NewParser() *Parser {
 	return &Parser{}
 }
@@ -105,7 +107,7 @@ func (p *Parser) parseInitiatingParty(line []rune) (err error) {
 	i := &InitiatingParty{}
 	dataNum := string(line[7:10])
 	if dataNum != "001" {
-		return fmt.Errorf("Expected 003 data number but found %s\n", dataNum)
+		return fmt.Errorf("Expected 003 data number but found %s", dataNum)
 	}
 	i.ID = getString(line[10:45])
 	i.Name = getString(line[45:115])
@@ -125,7 +127,7 @@ func (p *Parser) parseInitiatingParty(line []rune) (err error) {
 func (p *Parser) parsePaymentHeader(line []rune) (err error) {
 	dataNum := string(line[7:10])
 	if dataNum != "002" {
-		return fmt.Errorf("Expected 002 datanum for Payment but found %s\n", dataNum)
+		return fmt.Errorf("Expected 002 datanum for Payment but found %s", dataNum)
 	}
 	cp := p.currentCreditor
 	if cp == nil {
@@ -153,12 +155,12 @@ func (p *Parser) parsePaymentHeader(line []rune) (err error) {
 
 func (p *Parser) parseDebitTransaction(line []rune) (err error) {
 	if p.currentPayment == nil {
-		return fmt.Errorf("Parser: got transaction line with no current payment\n")
+		return fmt.Errorf("Parser: got transaction line with no current payment")
 	}
 	t := &DebitTransaction{}
 	dataNum := string(line[7:10])
 	if dataNum != "003" {
-		return fmt.Errorf("Expected 003 datanum for debit transaction but found %s\n", dataNum)
+		return fmt.Errorf("Expected 003 datanum for debit transaction but found %s", dataNum)
 	}
 	t.ID = getString(line[10:45])
 	t.MandateID = getString(line[45:80])
@@ -194,10 +196,10 @@ func (p *Parser) parseDebitTransaction(line []rune) (err error) {
 
 func (p *Parser) parsePaymentTotals(line []rune) (err error) {
 	if p.currentPayment == nil {
-		return fmt.Errorf("Received date payment total line with no current Payment\n")
+		return fmt.Errorf("Received date payment total line with no current Payment")
 	}
 	if p.currentCreditor == nil {
-		return fmt.Errorf("Received date payment total line with no current Creditor\n")
+		return fmt.Errorf("Received date payment total line with no current Creditor")
 	}
 	creditorID := getString(line[02:37])
 	date, err := getDate(line[37:45])
@@ -218,10 +220,10 @@ func (p *Parser) parsePaymentTotals(line []rune) (err error) {
 	}
 	//test parsed values against previous ones
 	if creditorID != p.currentCreditor.Creditor.ID {
-		return fmt.Errorf("Received totals line with different Creditor ID: %s. Payment.Creditor.ID: %s\n", creditorID, p.currentCreditor.Creditor.ID)
+		return fmt.Errorf("Received totals line with different Creditor ID: %s. Payment.Creditor.ID: %s", creditorID, p.currentCreditor.Creditor.ID)
 	}
 	if date != p.currentPayment.Date {
-		return fmt.Errorf("Received totals line with different date: %s. (Payment.date=%s)\n", date, p.currentPayment.Date)
+		return fmt.Errorf("Received totals line with different date: %s. (Payment.date=%s)", date, p.currentPayment.Date)
 	}
 	if math.Abs(totalAmount-p.currentPayment.TotalAmount) > 0.01 {
 		return fmt.Errorf("Calculated amount = %f diferent from parsed amount = %f", p.currentPayment.TotalAmount, totalAmount)
@@ -242,7 +244,7 @@ func (p *Parser) parsePaymentTotals(line []rune) (err error) {
 
 func (p *Parser) parseCreditorTotals(line []rune) (err error) {
 	if p.currentCreditor == nil {
-		return fmt.Errorf("Received creditor totals line (05) with no current Creditor\n")
+		return fmt.Errorf("Received creditor totals line (05) with no current Creditor")
 	}
 	creditorID := getString(line[02:37])
 	totalAmount, err := getMoney(line[37:54])
@@ -259,7 +261,7 @@ func (p *Parser) parseCreditorTotals(line []rune) (err error) {
 	}
 	//test parsed values against previous ones
 	if creditorID != p.currentCreditor.Creditor.ID {
-		return fmt.Errorf("Received totals line with different Creditor ID: %s. Payment.Creditor.ID: %s\n", creditorID, p.currentCreditor.Creditor.ID)
+		return fmt.Errorf("Received totals line with different Creditor ID: %s. Payment.Creditor.ID: %s", creditorID, p.currentCreditor.Creditor.ID)
 	}
 	if math.Abs(totalAmount-p.currentCreditor.TotalAmount) > 0.01 {
 		return fmt.Errorf("Calculated amount = %f diferent from parsed amount = %f", p.currentCreditor.TotalAmount, totalAmount)
@@ -308,15 +310,18 @@ func (p *Parser) parseTotals(line []rune) (err error) {
 func getString(rs []rune) string {
 	return strings.TrimSpace(string(rs))
 }
+
 func getDate(rs []rune) (date time.Time, err error) {
 	date, err = time.Parse("20060102", getString(rs))
 	return
 }
+
 func getMoney(rs []rune) (amount float64, err error) {
 	amount, err = strconv.ParseFloat(getString(rs), 32)
 	amount = amount / 100
 	return
 }
+
 func getInt(rs []rune) (num int, err error) {
 	num, err = strconv.Atoi(getString(rs))
 	return

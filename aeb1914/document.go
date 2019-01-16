@@ -72,6 +72,7 @@ type Document struct {
 	TotalRegisterCount int
 }
 
+//NewDocument returns an *aeb1914.Document
 func NewDocument() *Document {
 	return &Document{}
 }
