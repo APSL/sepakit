@@ -1,3 +1,3 @@
 module github.com/apsl/sepakit
 
-require golang.org/x/text v0.3.0
+require golang.org/x/text v0.3.8
